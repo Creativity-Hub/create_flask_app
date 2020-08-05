@@ -1,0 +1,9 @@
+.*
+!/.gitignore
+__pycache__/
+*.py[cod]
+*$py.class
+poetry.lock
+pyproject.toml
+.replit
+main.py
