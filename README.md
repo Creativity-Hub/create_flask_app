@@ -15,9 +15,13 @@ Set the following optional parameters to _define your project_.
   
   >endpoints: Add as many server endpoints as your project needs.
   
+  >site_endpoints: HTML-CSS-JS files and endpoint quick.
+  
+  >request_endpoints: Add GET and POST requests to your endpoints.
+  
   >threading: Separate your execution flow with Threading and take your project to a ride with multiple server requests.
   
-  >WSGIServer: gevents WSGI Server provides a production ready server.
+  >wsgierver: gevents WSGI Server provides a production ready server.
   
   >unwanted_warnings: Disables console warnings.
   
