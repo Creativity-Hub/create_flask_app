@@ -1,4 +1,4 @@
-# create_flask_app
+# create_flask_app by Creativity Hub
 Your own Flask app in less than a second.
 
 ### Introduction
@@ -40,3 +40,5 @@ Set the following optional parameters to _define your project_.
 ----
 
 MIT
+
+![Creativity Hub](https://i.ibb.co/cXbN6Fw/Creativity-Hub.png?raw=true)
