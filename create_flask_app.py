@@ -1,42 +1,52 @@
 import os
 import argparse
 
-def create_flask_app(app='flask_app', threading=False, WSGIServer=False, unwanted_warnings=False, logging=False, further_logging=False, endpoints=None):
+def check_for_pkg(pkg):
+	try:
+		exec("import " + pkg)
+	except:
+		os.system("pip3 install --user " + pkg)
+
+def create_flask_app(app='flask_app', threading=False, wsgiserver=False, unwanted_warnings=False, logging=False, further_logging=False, site_endpoints=None, endpoints=None, request_endpoints=None):
 	
-	lines = ["from flask import Flask, send_from_directory","import codecs"]
-	print(app)
+	check_for_pkg('flask')
+
+	lines = ["from flask import Flask, send_from_directory","import codecs", "import os"]
+
 	params = {
 		'app': app,
 		'threading': threading,
-		'WSGIServer': WSGIServer,
+		'wsgiserver': wsgiserver,
 		'unwanted_warnings': unwanted_warnings,
 		'logging': logging, 
 		'further_logging': further_logging,
+		'site_endpoints': site_endpoints,
 		'endpoints': endpoints,
+		'request_endpoints': request_endpoints
 	}
 
 	if __name__ == '__main__':
 		parser = argparse.ArgumentParser()
 		for param in params.keys():
-			if param == 'endpoints':
+			if 'endpoints' in param:
 				parser.add_argument('-'+param[0].lower(), '--'+param.lower(), nargs='+', help='', required=False)
 			else:
 				parser.add_argument('-'+param[0].lower(), '--'+param.lower(), help='', required=False)
 
 		args = vars(parser.parse_args())
 		for param in args.keys():
+			if 'request' in param and len(args[param]) % 3 != 0:
+				print('Request method endpoint format invalid, enter "Method" "Endpoint" "Parameter"')
 			if param == 'app':
 				if args[param] != None:
 					params[param] = args[param]
 			else:
 					params[param] = args[param]
 
-	project = params['app']
-	print(project)
-	endpoints = params['endpoints']
+	index = "<!DOCTYPE html>\n<html>\n<head>\n\t<title>endpoint</title>\n\t<link href='static/style.css' rel='stylesheet'>\n</head>\n<body>\n\n<script src='static/script.js'></script>\n</body>\n</html>"
 
-	index = "<!DOCTYPE html>\n<html>\n<head>\n\t<title>endpoint</title>\n\t<link href='static/style.css' rel='stylesheet'>\n</head>\n<body>\n\n<script src='static/script.js'></script>\n</body>\n</html>".replace('endpoint', project)
-	
+	project = params['app']
+
 	if not os.path.exists(project):
 		os.mkdir(project)
 	if not os.path.exists(project+'/web'):
@@ -50,17 +60,16 @@ def create_flask_app(app='flask_app', threading=False, WSGIServer=False, unwante
 	indexFile.write(index.replace('endpoint', project))
 	indexFile.close()
 
-
 	f = open(project+'/'+project+".py","w+")
 
 	headers = {
 		'threading': ["", "#Threading", "from threading import Thread"],
-		'WSGIServer': ["", "#WSGIServer", "from gevent.pywsgi import WSGIServer"],
+		'wsgiserver': ["", "#WSGIServer", "from gevent.pywsgi import WSGIServer"],
 		'unwanted_warnings': ["", "#Disable Warnings", "import warnings", "warnings.filterwarnings('ignore')"],
 		'logging': ["", "#Logging", "import logging", "", "#Logging configuration set to debug on debug.log file", "logging.basicConfig(filename='debug.log',level=logging.DEBUG)", "logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')"],
 		'further_logging': ["", "#Disable unneeded dependencies logging", "werkzeugLog = logging.getLogger('werkzeug')", "werkzeugLog.disabled = True", "requestsLog = logging.getLogger('urllib3.connectionpool')", "requestsLog.disabled = True"],
 	}
-
+	
 	for param in headers.keys():
 		if params[param]:
 			for line in headers[param]:
@@ -68,7 +77,8 @@ def create_flask_app(app='flask_app', threading=False, WSGIServer=False, unwante
 
 	lines.append("\ndef run():")
 
-	if params['WSGIServer']:
+	if params['wsgiserver']:
+		check_for_pkg('gevent')
 		lines.append("\t#WSGIServer") 
 		lines.append("\tWSGIServer(('', 8081), app).serve_forever()")
 	else:
@@ -81,9 +91,12 @@ def create_flask_app(app='flask_app', threading=False, WSGIServer=False, unwante
 	for line in ["", "app = Flask(__name__)", "", "@app.route('/')", "def main():", "\t#index.html", "\treturn codecs.open('web/index.html', 'r', 'utf-8').read()", "", "@app.route('/favicon.ico')", "def favicon():", "\treturn send_from_directory(os.path.join(app.root_path, 'static'),'favicon.ico', mimetype='image/vnd.microsoft.icon')"]:
 		lines.append(line)
 
-	if endpoints is not None:
-		for ep in endpoints:
-			tp = ["@app.route('/endpoint')", "def endpoint():", "\t#endpoint.html", "\treturn codecs.open('web/endpoint.html', 'r', 'utf-8').read()"]
+
+	site_endpoints = params['site_endpoints']
+	if site_endpoints is not None:
+		for ep in site_endpoints:
+			print('Endpoint: ' + ep)
+			tp = ["\n@app.route('/endpoint')", "def endpoint():", "\t#endpoint.html", "\treturn codecs.open('web/endpoint.html', 'r', 'utf-8').read()"]
 			for line in tp:
 				lines.append(line.replace('endpoint', ep))
 
@@ -92,22 +105,42 @@ def create_flask_app(app='flask_app', threading=False, WSGIServer=False, unwante
 			epFile.close()
 			os.system('touch '+project+'/static/'+ep+'.css')
 			os.system('touch '+project+'/static/'+ep+'.js')
+	
+	endpoints = params['endpoints']
+	if endpoints is not None:
+		for ep in endpoints:
+			print('Endpoint: ' + ep)
+			tp = ["\n@app.route('/endpoint')", "def endpoint():", "\t#endpoint.html", "\treturn endpoint_route"]
+			for line in tp:
+				lines.append(line.replace('endpoint', ep))
 
-	lines.append("if __name__ == '__main__':")
-	if params['WSGIServer']:
-		lines.append("\t#Threading")
+	request_endpoints = params['request_endpoints']
+	print(request_endpoints)
+	request_method = request_endpoints[0]
+	if request_endpoints is not None:
+		request_endpoints = [request_endpoints[i * 3:(i + 1) * 3] for i in range((len(request_endpoints) + 3 - 1) // 3)]
+		for request_method, ep, request_param in request_endpoints:
+			print('Endpoint: ' + ep, '\nMethod: ' + request_method, '\nParameter: ' + request_param)
+			tp = ["\n@app.route('/"+ep+"/<"+request_param+">', methods=['"+request_method+"'])", "def "+ep+"():", "\t#"+request_method+" method endpoint", "\treturn do_something("+request_param+")"]
+			for line in tp:
+				lines.append(line)
+
+	lines.append("\nif __name__ == '__main__':")
+	if params['wsgiserver']:
+		lines.append("\t#Run server forever")
 		lines.append("\tkeep_alive()")
 	else:
-		lines.append("\t#No Threading")
+		lines.append("\t#Run server")
 		lines.append("\trun()")
 
 	for line in lines:
 		f.write(line+'\n')
 	f.close()
-	print('Created App ' + project)
+	print('Created' + project + ' app succesfully.')
 	for param in params.keys():
 		if params[param] and param != 'app':
 			print(param, params[param])
+
 	os.system('open '+ project)
 
 if __name__ == '__main__':
