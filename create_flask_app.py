@@ -121,7 +121,7 @@ def create_flask_app(app='flask_app', threading=False, wsgiserver=False, unwante
 		request_endpoints = [request_endpoints[i * 3:(i + 1) * 3] for i in range((len(request_endpoints) + 3 - 1) // 3)]
 		for request_method, ep, request_param in request_endpoints:
 			print('Endpoint: ' + ep, '\nMethod: ' + request_method, '\nParameter: ' + request_param)
-			tp = ["\n@app.route('/"+ep+"/<"+request_param+">', methods=['"+request_method+"'])", "def "+ep+"():", "\t#"+request_method+" method endpoint", "\treturn do_something("+request_param+")"]
+			tp = ["\n@app.route('/"+ep+"/<"+request_param+">', methods=['"+request_method+"'])", "def "+ep+"("+request_param+"):", "\t#"+request_method+" method endpoint", "\treturn do_something("+request_param+")"]
 			for line in tp:
 				lines.append(line)
 
